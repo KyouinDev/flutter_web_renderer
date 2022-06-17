@@ -125,7 +125,7 @@ class Webserver {
     canvasKey.currentContext!.visitChildElements(visitor);
 
     await Future.wait(completers.map((e) => e.future));
-    await Future.delayed(Duration(milliseconds: 200 + assetImages * 50));
+    await Future.delayed(Duration(milliseconds: 200 + assetImages * 100));
     info('Done evaluating images');
   }
 
