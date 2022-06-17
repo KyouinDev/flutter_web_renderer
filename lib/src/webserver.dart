@@ -95,39 +95,38 @@ class Webserver {
     );
   }
 
-  Future<List<CachedNetworkImageProvider>> evaluateImages() async {
+  Future<void> evaluateImages() async {
     info('Evaluating images');
-    final imageUrls = <CachedNetworkImageProvider>[];
-
     final completers = <Completer<void>>[];
+    var assetImages = 0;
 
     ElementVisitor? visitor;
     visitor = (Element element) {
       if (element.widget is Image) {
         final image = element.widget as Image;
-        final Completer<void> completer = Completer<void>();
-        completers.add(completer);
-        image.image
+        final provider = image.image;
+        if (provider is CachedNetworkImageProvider) {
+          final Completer<void> completer = Completer<void>();
+          completers.add(completer);
+          provider
             .resolve(config.imageConfiguration)
             .addListener(ImageStreamListener((ImageInfo i, bool syncCall) {
-          if (!completer.isCompleted) {
-            completer.complete();
-          }
-        }));
-        if (image.image is CachedNetworkImageProvider) {
-          final cachedProvider = image.image as CachedNetworkImageProvider;
-          imageUrls.add(cachedProvider);
+            if (!completer.isCompleted) {
+              completer.complete();
+            }
+          }));
+        } else {
+          assetImages++;
         }
       }
-      element.visitChildElements(visitor!);
+      element.visitChildren(visitor!);
     };
 
     canvasKey.currentContext!.visitChildElements(visitor);
 
     await Future.wait(completers.map((e) => e.future));
-    await Future.delayed(const Duration(milliseconds: 200));
+    await Future.delayed(Duration(milliseconds: 200 + assetImages * 50));
     info('Done evaluating images');
-    return imageUrls;
   }
 
   Future<Response> requestHandler(Request request) async {
@@ -166,6 +165,10 @@ class Webserver {
         }
 
         await evaluateImages();
+
+        while (WidgetsBinding.instance.hasScheduledFrame) {
+            await Future.delayed(const Duration(milliseconds: 100));
+        }
 
         final boundary = canvasKey.currentContext!.findRenderObject()!;
         info(
