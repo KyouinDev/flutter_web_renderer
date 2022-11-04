@@ -164,10 +164,10 @@ class Webserver {
           await Future.delayed(const Duration(milliseconds: 10));
         }
 
-        await evaluateImages();
+        //await evaluateImages();
 
         while (WidgetsBinding.instance.hasScheduledFrame) {
-            await Future.delayed(const Duration(milliseconds: 100));
+          await Future.delayed(const Duration(milliseconds: 100));
         }
 
         final boundary = canvasKey.currentContext!.findRenderObject()!;
