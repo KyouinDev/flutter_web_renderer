@@ -95,40 +95,6 @@ class Webserver {
     );
   }
 
-  Future<void> evaluateImages() async {
-    info('Evaluating images');
-    final completers = <Completer<void>>[];
-    var assetImages = 0;
-
-    ElementVisitor? visitor;
-    visitor = (Element element) {
-      if (element.widget is Image) {
-        final image = element.widget as Image;
-        final provider = image.image;
-        if (provider is CachedNetworkImageProvider) {
-          final Completer<void> completer = Completer<void>();
-          completers.add(completer);
-          provider
-            .resolve(config.imageConfiguration)
-            .addListener(ImageStreamListener((ImageInfo i, bool syncCall) {
-            if (!completer.isCompleted) {
-              completer.complete();
-            }
-          }));
-        } else {
-          assetImages++;
-        }
-      }
-      element.visitChildren(visitor!);
-    };
-
-    canvasKey.currentContext!.visitChildElements(visitor);
-
-    await Future.wait(completers.map((e) => e.future));
-    await Future.delayed(Duration(milliseconds: 200 + assetImages * 100));
-    info('Done evaluating images');
-  }
-
   Future<Response> requestHandler(Request request) async {
     return lock.synchronized(
       () => _requestHandler(request).timeout(config.renderTimeout),
@@ -164,8 +130,7 @@ class Webserver {
           await Future.delayed(const Duration(milliseconds: 10));
         }
 
-        //await evaluateImages();
-
+        await Future.delayed(const Duration(milliseconds: 200));
         while (WidgetsBinding.instance.hasScheduledFrame) {
           await Future.delayed(const Duration(milliseconds: 100));
         }
