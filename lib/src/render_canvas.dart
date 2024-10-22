@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:screenshot/screenshot.dart';
 
 import 'package:web_renderer/web_renderer.dart';
 
@@ -44,7 +45,10 @@ class _RenderCanvasState extends State<RenderCanvas> {
           type: MaterialType.transparency,
           child: ColoredBox(
             color: Colors.transparent,
-            child: widgetable!.asWidget(),
+            child: Screenshot(
+              controller: widget.webserver.screenshotController,
+              child: widgetable!.asWidget(),
+            ),
           ),
         ),
       ),

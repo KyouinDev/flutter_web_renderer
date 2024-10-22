@@ -12,6 +12,7 @@ dependencies:
     sdk: flutter
   flutter_cache_manager: ^3.3.1
   intl: ^0.17.0
+  screenshot: ^2.5.0
   shelf: ^1.4.1
   synchronized: ^3.1.0+1
 

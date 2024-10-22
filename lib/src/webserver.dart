@@ -1,13 +1,12 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
-import 'dart:ui';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:intl/intl.dart';
+import 'package:screenshot/screenshot.dart';
 import 'package:shelf/shelf.dart';
 import 'package:shelf/shelf_io.dart' as shelf_io;
 import 'package:synchronized/synchronized.dart';
@@ -51,14 +50,14 @@ class Webserver {
 
   final canvasKey = GlobalKey();
 
+  final screenshotController = ScreenshotController();
+
   void Function(Widgetable?)? stateSetter;
 
-  WebserverConfig config;
+  final WebserverConfig config;
 
   Webserver({required this.config}) {
-    var middleware = createMiddleware(
-      errorHandler: onRequestError,
-    );
+    var middleware = createMiddleware(errorHandler: onRequestError);
     if (config.logRequests) {
       middleware = middleware.addMiddleware(
         logRequests(
@@ -114,7 +113,6 @@ class Webserver {
     stateSetter?.call(widgetable);
 
     Response? response;
-
     WidgetsBinding.instance.addPostFrameCallback((millis) async {
       try {
         // Wait for canvas to be rendered
@@ -122,25 +120,16 @@ class Webserver {
           await Future.delayed(const Duration(milliseconds: 10));
         }
 
-        await Future.delayed(const Duration(milliseconds: 200));
         while (WidgetsBinding.instance.hasScheduledFrame) {
-          await Future.delayed(const Duration(milliseconds: 100));
+          await Future.delayed(const Duration(milliseconds: 50));
         }
 
-        var boundary = canvasKey.currentContext!.findRenderObject()!;
-        info(
-          'Getting RenderRepaintBoundary as '
-          'Image with pixel ratio ${widgetable.pixelRatio}',
-        );
-        var image = await (boundary as RenderRepaintBoundary).toImage(
+        var screenshot = await screenshotController.capture(
           pixelRatio: widgetable.pixelRatio,
+          delay: const Duration(milliseconds: 100),
         );
-
-        info('Converting image to bytes');
-        var byteData = await image.toByteData(format: ImageByteFormat.png);
-
         response = Response.ok(
-          byteData!.buffer.asUint8List(),
+          screenshot,
           headers: {'Content-Type': 'image/png'},
         );
       } on Exception catch (e, s) {
@@ -150,7 +139,7 @@ class Webserver {
 
     info('Waiting for frame to be rendered');
     while (response == null) {
-      await Future.delayed(const Duration(milliseconds: 100));
+      await Future.delayed(const Duration(milliseconds: 50));
     }
 
     if (kReleaseMode) {
