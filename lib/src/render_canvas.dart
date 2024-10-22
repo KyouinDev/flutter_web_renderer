@@ -1,8 +1,6 @@
-library web_renderer;
-
 import 'package:flutter/material.dart';
 
-import '../web_renderer.dart';
+import 'package:web_renderer/web_renderer.dart';
 
 class RenderCanvas extends StatefulWidget {
   final Webserver webserver;
@@ -12,8 +10,8 @@ class RenderCanvas extends StatefulWidget {
   const RenderCanvas({
     required this.webserver,
     this.theme,
-    Key? key,
-  }) : super(key: key);
+    super.key,
+  });
 
   @override
   State<RenderCanvas> createState() => _RenderCanvasState();
@@ -26,7 +24,7 @@ class _RenderCanvasState extends State<RenderCanvas> {
   void initState() {
     super.initState();
 
-    widget.webserver.stateSetter = (Widgetable? widgetable) {
+    widget.webserver.stateSetter = (widgetable) {
       setState(() => this.widgetable = widgetable);
     };
   }
@@ -36,6 +34,7 @@ class _RenderCanvasState extends State<RenderCanvas> {
     if (widgetable == null) {
       return Container();
     }
+
     return RepaintBoundary(
       key: widget.webserver.canvasKey,
       child: MaterialApp(
@@ -43,7 +42,7 @@ class _RenderCanvasState extends State<RenderCanvas> {
         theme: widget.theme,
         home: Material(
           type: MaterialType.transparency,
-          child: Container(
+          child: ColoredBox(
             color: Colors.transparent,
             child: widgetable!.asWidget(),
           ),

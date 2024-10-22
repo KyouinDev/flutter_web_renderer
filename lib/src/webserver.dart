@@ -2,39 +2,27 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:ui';
-import 'package:intl/intl.dart';
 
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
+import 'package:intl/intl.dart';
 import 'package:shelf/shelf.dart';
 import 'package:shelf/shelf_io.dart' as shelf_io;
 import 'package:synchronized/synchronized.dart';
 
-import 'window_size_utils.dart';
-import 'widgetable.dart';
+import 'package:web_renderer/src/widgetable.dart';
+import 'package:web_renderer/src/window_size_utils.dart';
 
-typedef _JsonMap = Map<String, dynamic>;
+typedef WebserverRequestMapping
+    = Map<String, FutureOr<Widgetable> Function(Map<String, dynamic> json)>;
 
-typedef WebserverRequestMapping = Map<
-    String,
-    FutureOr<Widgetable> Function(
-  _JsonMap json,
-)>;
+String _getTime() => DateFormat('kk:mm:ss.SSS').format(DateTime.now());
 
-String _getTime() {
-  return DateFormat('kk:mm:ss.SSS').format(DateTime.now());
-}
+void error(Object? i) => stderr.writeln('${_getTime()} - $i');
 
-void error(Object? i) {
-  stderr.writeln('${_getTime()} - $i');
-}
-
-void info(Object? i) {
-  stdout.writeln('${_getTime()} - $i');
-}
+void info(Object? i) => stdout.writeln('${_getTime()} - $i');
 
 class WebserverConfig {
   final WebserverRequestMapping requestMapping;
@@ -51,7 +39,7 @@ class WebserverConfig {
     this.address = 'localhost',
     this.port = 8080, // InternetAddress.anyIPv4
     this.renderTimeout = const Duration(seconds: 5),
-    this.imageConfiguration = const ImageConfiguration(),
+    this.imageConfiguration = ImageConfiguration.empty,
     this.autoCompressNetwork = true,
     this.logRequests = false,
     CacheManager? cacheManager,
@@ -72,17 +60,22 @@ class Webserver {
       errorHandler: onRequestError,
     );
     if (config.logRequests) {
-      middleware = middleware.addMiddleware(logRequests(
-        logger: (message, isError) {
-          (isError ? error : info)(message);
-        },
-      ));
+      middleware = middleware.addMiddleware(
+        logRequests(
+          logger: (message, isError) {
+            (isError ? error : info)(message);
+          },
+        ),
+      );
     }
-    final handler = middleware.addHandler(requestHandler);
-    shelf_io.serve(handler, config.address, config.port).then((server) {
-      server.autoCompress = config.autoCompressNetwork;
-      info('Serving at http://${server.address.host}:${server.port}');
-    });
+
+    var handler = middleware.addHandler(requestHandler);
+    unawaited(
+      shelf_io.serve(handler, config.address, config.port).then((server) {
+        server.autoCompress = config.autoCompressNetwork;
+        info('Serving at http://${server.address.host}:${server.port}');
+      }),
+    );
   }
 
   Future<Response> onRequestError(Object error, StackTrace stackTrace) async {
@@ -102,21 +95,20 @@ class Webserver {
   }
 
   Future<Response> _requestHandler(Request request) async {
-    final path = request.url.path;
-
+    var path = request.url.path;
     if (!config.requestMapping.containsKey(path)) {
       return Response.notFound(json.encode({'error': 'Path not found'}));
     }
 
     info('Handling new request: $path');
 
-    final body = await request.readAsString();
-    final jsonMap = json.decode(body);
-    final widgetable = await config.requestMapping[path]!(jsonMap);
+    var body = await request.readAsString();
+    var jsonMap = json.decode(body);
+    var widgetable = await config.requestMapping[path]!(jsonMap);
 
-    final size = widgetable.size;
+    var size = widgetable.size;
     info('Setting frame size to $size');
-    setWindowFrame(Rect.fromLTWH(0, 0, size.width, size.height));
+    await setWindowFrame(Rect.fromLTWH(0, 0, size.width, size.height));
 
     info('Calling state setter with the generated widgetable');
     stateSetter?.call(widgetable);
@@ -135,17 +127,17 @@ class Webserver {
           await Future.delayed(const Duration(milliseconds: 100));
         }
 
-        final boundary = canvasKey.currentContext!.findRenderObject()!;
+        var boundary = canvasKey.currentContext!.findRenderObject()!;
         info(
           'Getting RenderRepaintBoundary as '
           'Image with pixel ratio ${widgetable.pixelRatio}',
         );
-        final image = await (boundary as RenderRepaintBoundary).toImage(
+        var image = await (boundary as RenderRepaintBoundary).toImage(
           pixelRatio: widgetable.pixelRatio,
         );
 
         info('Converting image to bytes');
-        final byteData = await image.toByteData(format: ImageByteFormat.png);
+        var byteData = await image.toByteData(format: ImageByteFormat.png);
 
         response = Response.ok(
           byteData!.buffer.asUint8List(),

@@ -11,8 +11,6 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-import 'dart:ui';
-
 import 'package:flutter/services.dart';
 
 const String _windowSizeChannelName = 'flutter/windowsize';
@@ -27,14 +25,16 @@ class WindowSizeChannel {
 
   static final WindowSizeChannel instance = WindowSizeChannel._();
 
-  void setWindowFrame(Rect frame) async {
+  Future setWindowFrame(Rect frame) async {
     assert(!frame.isEmpty, 'Cannot set window frame to an empty rect.');
     assert(frame.isFinite, 'Cannot set window frame to a non-finite rect.');
-    await _platformChannel.invokeMethod(_setWindowFrameMethod,
-        [frame.left, frame.top, frame.width, frame.height]);
+    return _platformChannel.invokeMethod(
+      _setWindowFrameMethod,
+      [frame.left, frame.top, frame.width, frame.height],
+    );
   }
 }
 
-void setWindowFrame(Rect frame) async {
-  WindowSizeChannel.instance.setWindowFrame(frame);
+Future setWindowFrame(Rect frame) {
+  return WindowSizeChannel.instance.setWindowFrame(frame);
 }
