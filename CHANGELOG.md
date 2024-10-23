@@ -1,3 +1,9 @@
+## 0.0.5
+
+* Changes for implementing the screenshot package
+* Minor optimizations and fixes
+* Updated dependencies
+
 ## 0.0.4+1
 
 * Changes for logging in release mode - this is a server-side script

@@ -121,12 +121,12 @@ class Webserver {
         }
 
         while (WidgetsBinding.instance.hasScheduledFrame) {
-          await Future.delayed(const Duration(milliseconds: 50));
+          await Future.delayed(const Duration(milliseconds: 10));
         }
 
         var screenshot = await screenshotController.capture(
           pixelRatio: widgetable.pixelRatio,
-          delay: const Duration(milliseconds: 100),
+          delay: const Duration(milliseconds: 50),
         );
         response = Response.ok(
           screenshot,
