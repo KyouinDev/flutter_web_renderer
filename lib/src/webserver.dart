@@ -126,7 +126,7 @@ class Webserver {
 
         var screenshot = await screenshotController.capture(
           pixelRatio: widgetable.pixelRatio,
-          delay: const Duration(milliseconds: 50),
+          delay: const Duration(milliseconds: 150),
         );
         response = Response.ok(
           screenshot,
