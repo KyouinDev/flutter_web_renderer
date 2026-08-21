@@ -4,20 +4,20 @@ version: 0.0.5
 repository: https://github.com/KaikyuLotus/flutter_web_renderer
 
 environment:
-  sdk: ">=3.3.1 <4.0.0"
+  sdk: ">=3.13.1 <4.0.0"
 
 dependencies:
-  cached_network_image: ^3.4.0
+  cached_network_image: ^3.4.1
   flutter:
     sdk: flutter
-  flutter_cache_manager: ^3.3.1
-  intl: ^0.17.0
-  screenshot: ^2.5.0
-  shelf: ^1.4.1
-  synchronized: ^3.1.0+1
+  flutter_cache_manager: ^3.4.2
+  intl: ^0.20.3
+  screenshot: ^3.0.0
+  shelf: ^1.4.2
+  synchronized: ^3.4.1+2
 
 dev_dependencies:
-  flutter_lints: ^3.0.1
+  flutter_lints: ^6.0.0
   flutter_test:
     sdk: flutter
 
